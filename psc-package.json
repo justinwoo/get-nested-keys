@@ -1,0 +1,12 @@
+{
+  "name": "get-nested-keys",
+  "set": "tangsuyuk",
+  "source": "https://github.com/justinwoo/package-sets.git",
+  "depends": [
+    "lists",
+    "record",
+    "console",
+    "eff",
+    "prelude"
+  ]
+}
