@@ -2,13 +2,14 @@ module Main where
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.List (List)
 import Data.List as List
-import Data.Monoid (mempty)
 import Data.Traversable (traverse_)
-import Type.Prelude (class AppendSymbol, class IsSymbol, class RowToList, Proxy(Proxy), SProxy(SProxy), reflectSymbol)
+import Effect (Effect)
+import Effect.Console (log)
+import Prim.RowList (class RowToList)
+import Prim.Symbol (class Append)
+import Type.Prelude (class IsSymbol, Proxy(..), SProxy(..), reflectSymbol)
 import Type.Row (Cons, Nil, kind RowList)
 
 foreign import kind SList
@@ -29,16 +30,16 @@ class SListPrefixItems (prefix :: Symbol) (i :: SList) (o :: SList)
 instance nilSLPI :: SListPrefixItems prefix SNil SNil
 instance consSLPI ::
   ( SListPrefixItems prefix tail o'
-  , AppendSymbol prefix "." prefix'
-  , AppendSymbol prefix' s s'
+  , Append prefix "." prefix'
+  , Append prefix' s s'
   ) => SListPrefixItems prefix (SCons s tail) (SCons s' o')
 
 class NestedLabels a (xs :: SList) | a -> xs
-instance zzzNL :: NestedLabels a SNil
 instance recordNL ::
   ( RowToList row rl
   , NestedLabelsFields rl xs
   ) => NestedLabels { | row } xs
+else instance elseNL :: NestedLabels a SNil
 
 class NestedLabelsFields (rl :: RowList) (xs :: SList)
   | rl -> xs
@@ -81,7 +82,6 @@ type MyRecord =
   { eagle ::
   { thing :: String }}}}}}
 
--- this has 6 overlapping instance warnings:
 labels
   :: SLProxy
       (SCons "apple"
@@ -92,9 +92,10 @@ labels
       (SCons "apple.banana.cherry.dairy.eagle.thing" SNil))))))
 labels = nestedLabels (Proxy :: Proxy MyRecord)
 
-main :: forall e. Eff (console :: CONSOLE | e) Unit
+main :: Effect Unit
 main = do
   traverse_ log (sListToStrings labels)
+  traverse_ log (sListToStrings $ nestedLabels (Proxy :: Proxy MyRecord))
 
 -- apple
 -- apple.banana
